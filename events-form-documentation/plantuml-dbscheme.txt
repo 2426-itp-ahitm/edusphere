@@ -1,0 +1,58 @@
+@startuml
+' Simple ERD for HTL Leonding events system
+
+entity "wp_htlleo_events" as events {
+  + id : INT <<PK>>
+  --
+  title : VARCHAR(191)
+  description : TEXT
+  created_at : DATETIME
+}
+
+entity "wp_htlleo_sessions" as sessions {
+  + id : INT <<PK>>
+  --
+  event_id : INT <<FK>>
+  group_name : VARCHAR(100)
+  start_datetime : DATETIME
+  end_datetime : DATETIME
+  capacity : INT
+  created_at : DATETIME
+}
+
+entity "wp_htlleo_interests" as interests {
+  + id : INT <<PK>>
+  --
+  name : VARCHAR(100)
+}
+
+entity "wp_htlleo_event_interests" as event_interests {
+  + event_id : INT <<PK,FK>>
+  + interest_id : INT <<PK,FK>>
+}
+
+entity "wp_htlleo_registrations" as registrations {
+  + id : INT <<PK>>
+  --
+  session_id : INT <<FK>>
+  preferred_interest_id : INT <<FK>>
+  gender : VARCHAR(10)
+  last_name : VARCHAR(100)
+  first_name : VARCHAR(100)
+  city : VARCHAR(150)
+  school : VARCHAR(150)
+  class : VARCHAR(50)
+  email : VARCHAR(150)
+  phone : VARCHAR(50)
+  status : VARCHAR(20)
+  registered_at : DATETIME
+}
+
+' Relationships
+events ||--o{ sessions : "has"
+sessions ||--o{ registrations : "has"
+events ||--o{ event_interests : "has"
+interests ||--o{ event_interests : "is in"
+interests ||--o{ registrations : "preferred by"
+
+@enduml
