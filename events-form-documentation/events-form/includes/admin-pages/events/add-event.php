@@ -92,18 +92,21 @@ if (isset($_POST['htlleo_add_event'])) {
             <tr>
                 <th>Interests</th>
                 <td>
-                    <?php if (!empty($interests)) : ?>
+                    <select name="event_interests[]" id="event_interests" multiple style="width: 40%;">
                         <?php foreach ($interests as $interest) : ?>
-                            <label style="display:block;">
-                                <input type="checkbox" name="event_interests[]" value="<?php echo $interest->id; ?>">
-                                <?php echo esc_html($interest->name); ?>
-                            </label>
+                            <option value="<?php echo $interest->id; ?>"><?php echo esc_html($interest->name); ?></option>
                         <?php endforeach; ?>
-                    <?php else : ?>
-                        <em>No interests available.</em>
-                    <?php endif; ?>
+                    </select>
                 </td>
             </tr>
+            <script>
+            jQuery(document).ready(function($){
+                $('#event_interests').select2({
+                    placeholder: 'Select interests'
+                });
+            });
+            </script>
+
         </table>
 
         <h3>Sessions (time slots)</h3>

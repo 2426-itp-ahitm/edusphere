@@ -165,4 +165,67 @@ add_action('wp_ajax_htlleo_add_session', function(){
     ]);
 });
 
+// -------------------------
+// Shortcodes
+// -------------------------
+
+// Register the [htlleo_event id="123"] shortcode
+add_shortcode('htlleo_event', function($atts) {
+    global $wpdb;
+
+    $atts = shortcode_atts([
+        'id' => 0, // default event ID
+    ], $atts, 'htlleo_event');
+
+    $event_id = intval($atts['id']);
+    if (!$event_id) return '<p>No event specified.</p>';
+
+    $events_table = htlleo_get_table('events');
+    $sessions_table = htlleo_get_table('sessions');
+    $interests_table = htlleo_get_table('interests');
+    $event_interests_table = htlleo_get_table('event_interests');
+
+    // Fetch the event
+    $event = $wpdb->get_row($wpdb->prepare("SELECT * FROM $events_table WHERE id = %d", $event_id), ARRAY_A);
+    if (!$event) return '<p>Event not found.</p>';
+
+    // Fetch sessions
+    $sessions = $wpdb->get_results($wpdb->prepare("SELECT * FROM $sessions_table WHERE event_id = %d ORDER BY start_time ASC", $event_id), ARRAY_A);
+
+    // Fetch interests
+    $interest_names = $wpdb->get_col($wpdb->prepare(
+        "SELECT i.name 
+         FROM $interests_table i
+         INNER JOIN $event_interests_table ei ON ei.interest_id = i.id
+         WHERE ei.event_id = %d",
+        $event_id
+    ));
+
+    // Render output
+    ob_start();
+    ?>
+    <div class="htlleo-event">
+        <h2><?php echo esc_html($event['title']); ?></h2>
+        <p><strong>Date:</strong> <?php echo esc_html($event['event_date']); ?></p>
+        <p><strong>Description:</strong> <?php echo nl2br(esc_html($event['description'])); ?></p>
+        <?php if (!empty($interest_names)): ?>
+            <p><strong>Interests:</strong> <?php echo esc_html(implode(', ', $interest_names)); ?></p>
+        <?php endif; ?>
+
+        <?php if (!empty($sessions)): ?>
+            <h3>Sessions</h3>
+            <ul>
+                <?php foreach ($sessions as $session): ?>
+                    <li>
+                        <strong><?php echo esc_html($session['group_name']); ?></strong>
+                        (<?php echo esc_html($session['start_time']); ?> - <?php echo esc_html($session['end_time']); ?>)
+                        – Capacity: <?php echo intval($session['capacity']); ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </div>
+    <?php
+    return ob_get_clean();
+});
 

@@ -59,20 +59,51 @@ add_action('wp_ajax_htlleo_update_event', function() {
     $col   = sanitize_text_field($_POST['col']);
     $value = sanitize_text_field($_POST['value']);
 
-    $allowed_cols = ['title', 'description'];
+    $allowed_cols = ['title', 'description', 'event_date'];
     if (!in_array($col, $allowed_cols)) {
         wp_send_json_error('Invalid column');
     }
 
+    error_log('Updating event: ' . print_r($_POST, true));
+
     $updated = $wpdb->update(
         $events_table,
         [$col => $value],
-        ['id' => $id]
+        ['id' => $id],
+        ['%s'],
+        ['%d']
     );
-
-    if ($updated !== false) wp_send_json_success();
-    else wp_send_json_error('Database update failed');
+    
+    if ($updated === false) {
+        error_log('DB update failed: ' . $wpdb->last_error);
+        wp_send_json_error('Database update failed: ' . $wpdb->last_error);
+    }
+    
+    wp_send_json_success(['updated' => $updated, 'col' => $col, 'value' => $value]);
 });
+add_action('wp_ajax_htlleo_update_event_interests', function() {
+    global $wpdb;
+    $event_interests_table = htlleo_get_table('event_interests');
+
+    check_ajax_referer('htlleo_inline_edit', 'nonce');
+
+    $event_id = intval($_POST['event_id']);
+    $interests = array_map('intval', $_POST['interests'] ?? []);
+
+    // Remove all existing interests
+    $wpdb->delete($event_interests_table, ['event_id' => $event_id]);
+
+    // Insert new ones
+    foreach($interests as $interest_id){
+        $wpdb->insert($event_interests_table, [
+            'event_id' => $event_id,
+            'interest_id' => $interest_id
+        ]);
+    }
+
+    wp_send_json_success(['event_id' => $event_id, 'interests' => $interests]);
+});
+
 
 // Update Session Inline
 add_action('wp_ajax_htlleo_update_session', function() {
