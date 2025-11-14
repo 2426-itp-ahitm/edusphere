@@ -1,0 +1,10 @@
+.htlleo-event{
+    border-radius: 10px;
+}
+.htlleo-event-header {
+    color: yellow;
+    background-color: #031C2F;
+}
+.htlleo-event h2 {
+    font-size: 5vw;
+}
