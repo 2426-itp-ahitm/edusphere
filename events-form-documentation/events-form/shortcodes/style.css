@@ -1,10 +1,188 @@
-.htlleo-event{
-    border-radius: 10px;
+.htlleo-event {
+    max-width: 50rem;           
+    margin: 2rem auto;         
+    padding: 1.5rem;             
+    background-color: #f9f9f9;
+    border-radius: 0.75rem;      
+    box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.1); 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
 }
+
 .htlleo-event-header {
-    color: yellow;
-    background-color: #031C2F;
+    border-bottom: 0.125rem solid #eee; 
+    padding-bottom: 0.9375rem;         
+    margin-bottom: 1.25rem;             
+    text-align: center;
 }
-.htlleo-event h2 {
-    font-size: 5vw;
+
+.htlleo-event-title {
+    font-size: 1.8rem;
+    margin: 0;
+    color: #1a73e8;
 }
+
+.htlleo-event-date {
+    font-size: 1rem;
+    color: #555;
+}
+
+.htlleo-event-interests {
+    font-size: 0.95rem;
+    margin-top: 0.3125rem;  
+    color: #666;
+}
+
+.htlleo-event-sessions {
+    margin-top: 1.25rem;   
+}
+
+.htlleo-sessions-heading {
+    font-size: 1.4rem;
+    margin-bottom: 0.9375rem; 
+    border-bottom: 0.0625rem solid #ddd; 
+    padding-bottom: 0.7125rem;   
+    padding-left: 0.9rem;        
+}
+
+.htlleo-session-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(13.75rem, 1fr)); 
+    gap: 0.9375rem; 
+}
+
+.htlleo-session-card {
+    background-color: #fff;
+    border: 0.0625rem solid #ddd; 
+    border-radius: 0.5rem;        
+    padding: 0.9375rem 1.125rem;  
+    box-shadow: 0 0.125rem 0.375rem rgba(0,0,0,0.05); 
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.htlleo-session-card:hover {
+    transform: translateY(-0.1875rem); 
+    box-shadow: 0 0.375rem 0.9375rem rgba(0,0,0,0.1); 
+}
+
+.htlleo-session-group {
+    font-weight: 700;
+    margin-bottom: 0.4375rem;  
+    font-size: 1.05rem;
+    color: #1a1a1a;
+}
+
+.htlleo-session-time {
+    font-size: 0.95rem;
+    margin-bottom: 0.3125rem; 
+    color: #555;
+}
+
+.htlleo-session-capacity {
+    font-size: 0.85rem;
+    color: #888;
+}
+
+
+.htlleo-session-available {
+    cursor: pointer;
+    border-color: #1a73e8;
+    transition: all 0.2s;
+}
+
+.htlleo-session-available:hover {
+    background-color: #e8f0fe;
+    box-shadow: 0 0.5rem 1rem rgba(26, 115, 232, 0.15);
+}
+
+.htlleo-session-full {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* Container */
+.htlleo-registration-form-container {
+    margin-top: 2rem;
+}
+
+/* Formular */
+.htlleo-registration-form {
+    background-color: #fff;
+    border: 0.0625rem solid #ddd;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.05);
+    max-width: 600px;
+    margin: 1rem auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.htlleo-registration-form h3 {
+    margin-top: 0;
+    color: #1a73e8;
+    font-size: 1.3rem;
+    text-align: center;
+}
+
+/* Labels & Inputs */
+.htlleo-registration-form label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.htlleo-registration-form input,
+.htlleo-registration-form select {
+    padding: 0.5rem;
+    border: 0.0625rem solid #ccc;
+    border-radius: 0.375rem;
+    font-size: 1rem;
+    margin-top: 0.25rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.htlleo-registration-form input:focus,
+.htlleo-registration-form select:focus {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0.25rem rgba(26,115,232,0.25);
+    outline: none;
+}
+
+/* Button */
+.htlleo-registration-form button {
+    background-color: #1a73e8;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.htlleo-registration-form button:hover {
+    background-color: #1666c1;
+    transform: translateY(-1px);
+}
+
+/* Response */
+.htlleo-registration-response {
+    margin-top: 0.75rem;
+    font-size: 0.95rem;
+    color: #1a73e8;
+    text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .htlleo-registration-form {
+        padding: 1rem;
+    }
+}
+
