@@ -43,7 +43,7 @@ function htlleo_admin_interests_page() {
 }
 
 function htlleo_admin_registrations_page() {
-    require plugin_dir_path(__FILE__) . 'admin-pages/registrations.php';
+    require plugin_dir_path(__FILE__) . 'admin-pages/registrations/registrations.php';
 }
 
 
@@ -225,4 +225,41 @@ add_action('wp_ajax_htlleo_delete_interest', function(){
 
     if($deleted !== false) wp_send_json_success();
     else wp_send_json_error('Database delete failed');
+});
+
+
+// Update Registration Inline
+add_action('wp_ajax_htlleo_update_registration', function() {
+    global $wpdb;
+
+    check_ajax_referer('htlleo_edit_registration', 'nonce');
+
+    $registrations_table = htlleo_get_table('registrations');
+
+    $id    = intval($_POST['id']);
+    $col   = sanitize_key($_POST['col']);
+    $value = sanitize_text_field($_POST['value']);
+
+    $allowed_cols = [
+        'session_id','preferred_interest_id','gender','last_name','first_name',
+        'city','school','class','email','phone','status'
+    ];
+
+    if (!in_array($col, $allowed_cols)) {
+        wp_send_json_error("Invalid column");
+    }
+
+    $updated = $wpdb->update(
+        $registrations_table,
+        [$col => $value],
+        ['id' => $id],
+        ['%s'],
+        ['%d']
+    );
+
+    if ($updated === false) {
+        wp_send_json_error("DB error: " . $wpdb->last_error);
+    }
+
+    wp_send_json_success("Updated");
 });

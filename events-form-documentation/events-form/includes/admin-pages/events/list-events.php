@@ -3,6 +3,27 @@ if (!defined('ABSPATH')) exit;
 
 global $wpdb;
 $events_table = htlleo_get_table('events');
+
+// Handle deletion
+if (isset($_GET['htlleo_delete_event']) && isset($_GET['_wpnonce'])) {
+    $event_id = intval($_GET['htlleo_delete_event']);
+    $nonce = $_GET['_wpnonce'];
+
+    if (wp_verify_nonce($nonce, 'htlleo_delete_event_' . $event_id)) {
+        $wpdb->delete($events_table, ['id' => $event_id]);
+
+        echo '<div class="notice notice-success is-dismissible"><p>Event deleted successfully.</p></div>';
+
+        // Redirect to prevent resubmission
+        wp_redirect(admin_url('admin.php?page=htlleo_events'));
+        exit;
+    } else {
+        echo '<div class="notice notice-error is-dismissible"><p>Nonce verification failed. Cannot delete event.</p></div>';
+    }
+}
+?>
+
+<?php
 $event_interests_table = htlleo_get_table('event_interests');
 $interests_table = htlleo_get_table('interests');
 

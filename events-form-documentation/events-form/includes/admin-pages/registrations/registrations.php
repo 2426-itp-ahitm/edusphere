@@ -1,17 +1,14 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-global $wpdb;
-
 echo '<div class="wrap"><h1>Manage Registrations</h1></div>';
-// Include modular files
+
 echo '<div style="margin-bottom: 40px; padding: 20px; background: #fff; border: 1px solid #ddd;">';
-require_once plugin_dir_path(__FILE__) . 'add-event.php';
+include __DIR__ . '/add-registration.php';
 echo '</div>';
 
 echo '<hr style="margin:40px 0;">';
 
 echo '<div style="margin-top: 40px; padding: 20px; background: #fff; border: 1px solid #ddd;">';
-require_once plugin_dir_path(__FILE__) . 'list-events.php';
+include __DIR__ . '/list-registrations.php';
 echo '</div>';
-?>

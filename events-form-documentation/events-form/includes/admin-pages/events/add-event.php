@@ -17,8 +17,7 @@ if (isset($_POST['htlleo_add_event'])) {
     } else {
         $title = sanitize_text_field($_POST['event_title']);
         $description = sanitize_textarea_field($_POST['event_description']);
-        // $event_date = date('Y-m-d', strtotime($_POST['event_date']));
-        $event_date = '2025-11-06';
+        $event_date = date('Y-m-d', strtotime($_POST['event_date']));
 
         $wpdb->insert($events_table, [
             'title' => $title,
