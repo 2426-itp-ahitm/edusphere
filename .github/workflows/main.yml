@@ -57,7 +57,10 @@ jobs:
     # ───────────────────────────────
     - name: Setup kubectl
       run: |
+        mkdir -p ~/.kube
         echo "${{ secrets.LEOCLOUD_KUBECONFIG }}" | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+        kubectl config use-context leocloud
 
     - name: Verify Kubernetes access
       run: kubectl get nodes
