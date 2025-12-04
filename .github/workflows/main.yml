@@ -38,6 +38,9 @@ jobs:
       run: docker compose down
       working-directory: ./docker-local-wordpress
 
+    # ───────────────────────────────
+    #  DOCKER HUB BUILD & PUSH
+    # ───────────────────────────────
     - name: Log in to Docker Hub
       run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
@@ -48,3 +51,23 @@ jobs:
 
     - name: Push image to Docker Hub
       run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/wordpress-ci:latest
+
+    # ───────────────────────────────
+    #  DEPLOY TO LEOCLOUD KUBERNETES
+    # ───────────────────────────────
+    - name: Setup kubectl
+      run: |
+        echo "${{ secrets.LEOCLOUD_KUBECONFIG }}" | base64 -d > ~/.kube/config
+
+    - name: Verify Kubernetes access
+      run: kubectl get nodes
+
+    - name: Update Deployment image
+      run: |
+        kubectl set image deployment/wordpress \
+          wordpress=${{ secrets.DOCKERHUB_USERNAME }}/wordpress-ci:latest \
+          --namespace ${{ secrets.LEOCLOUD_NAMESPACE }}
+
+    - name: Apply Kubernetes Manifests (optional)
+      run: |
+        kubectl apply -f k8s/ --namespace ${{ secrets.LEOCLOUD_NAMESPACE }}
