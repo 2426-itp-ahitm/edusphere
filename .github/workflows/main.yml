@@ -63,7 +63,8 @@ jobs:
         kubectl config use-context leocloud
 
     - name: Verify Kubernetes access
-      run: kubectl get nodes
+      run: kubectl get pods --namespace ${{ secrets.LEOCLOUD_NAMESPACE }}
+
 
     - name: Update Deployment image
       run: |
