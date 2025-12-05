@@ -263,3 +263,20 @@ add_action('wp_ajax_htlleo_update_registration', function() {
 
     wp_send_json_success("Updated");
 });
+
+
+add_action('wp_ajax_htlleo_delete_registration', function(){
+    if(!check_ajax_referer('htlleo_delete_registration', 'nonce', false)){
+        wp_send_json_error('Invalid nonce');
+    }
+
+    global $wpdb;
+    $registrations_table = htlleo_get_table('registrations');
+    $id = intval($_POST['id']);
+
+    if($wpdb->delete($registrations_table, ['id' => $id])){
+        wp_send_json_success();
+    } else {
+        wp_send_json_error('Could not delete registration');
+    }
+});

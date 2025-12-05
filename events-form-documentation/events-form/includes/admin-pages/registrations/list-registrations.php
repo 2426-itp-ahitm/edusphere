@@ -55,7 +55,17 @@ foreach ($upcoming_rows as $r) {
 }
 
 // Fetch all registrations
-$registrations = $wpdb->get_results("SELECT * FROM $registrations_table ORDER BY registered_at DESC", ARRAY_A);
+$registrations = $wpdb->get_results("
+    SELECT r.*, s.group_name, s.event_id, e.title AS event_title, e.event_date
+    FROM $registrations_table r
+    JOIN $sessions_table s ON r.session_id = s.id
+    JOIN $events_table e ON s.event_id = e.id
+    ORDER BY 
+        CASE WHEN e.event_date >= '$today' THEN 0 ELSE 1 END,  -- upcoming first
+        e.event_date ASC,  -- nearest upcoming event first
+        s.group_name ASC,  -- session name
+        r.registered_at DESC
+", ARRAY_A);
 
 // Gender options
 $genders = ['male' => 'Male', 'female' => 'Female', 'diverse' => 'Diverse', 'none' => '—'];
@@ -64,95 +74,117 @@ $genders = ['male' => 'Male', 'female' => 'Female', 'diverse' => 'Diverse', 'non
 <div class="wrap">
     <h1>Registrations</h1>
 
+    <div style="margin-bottom: 1rem;">
+        <input type="text" id="htlleo-search-input" placeholder="Search users..." style="padding:5px; width: 200px; margin-right:10px;">
+        <select id="htlleo-event-filter" style="padding:5px;">
+            <option value="">— All Events —</option>
+            <?php
+            // Event filter dropdown
+            $events = $wpdb->get_results("SELECT id, title, event_date FROM $events_table ORDER BY event_date DESC", ARRAY_A);
+            foreach ($events as $e) {
+                echo '<option value="'.esc_attr($e['id']).'">'.esc_html($e['title'].' ('.$e['event_date'].')').'</option>';
+            }
+            ?>
+        </select>
+    </div>
+
     <?php if ($registrations): ?>
-        <table id="htlleo-registrations-table" class="widefat striped">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Session</th>
-                    <th>Interest</th>
-                    <th>Gender</th>
-                    <th>Last</th>
-                    <th>First</th>
-                    <th>City</th>
-                    <th>School</th>
-                    <th>Class</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Status</th>
-                    <th>Registered</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($registrations as $reg): ?>
+        <div id="htlleo-registrations-table-wrapper" style="max-height:600px; overflow:auto;">
+            <table id="htlleo-registrations-table" class="widefat striped">
+                <thead>
                     <tr>
-                        <td><?php echo $reg['id']; ?></td>
-
-                        <!-- Session dropdown -->
-                        <td>
-                            <select class="htlleo-edit-select" data-id="<?php echo $reg['id']; ?>" data-col="session_id">
-                                <?php
-                                $current_session_id = $reg['session_id'];
-                                // Always show current session first
-                                if (isset($all_sessions_map[$current_session_id])) {
-                                    $s = $all_sessions_map[$current_session_id];
-                                    echo '<option value="'.esc_attr($current_session_id).'" selected>'
-                                        .esc_html($s['group_name'].' — '.$s['event_title'].' ('.$s['event_date'].')')
-                                        .'</option>';
-                                }
-
-                                // List upcoming sessions as selectable options
-                                foreach ($upcoming_events as $edata) {
-                                    echo '<optgroup label="'.esc_attr($edata['title'].' — '.$edata['date']).'">';
-                                    foreach ($edata['sessions'] as $s) {
-                                        // skip if this is current session (already added)
-                                        if ($s['id'] == $current_session_id) continue;
-                                        echo '<option value="'.esc_attr($s['id']).'">'.esc_html($s['group_name']).'</option>';
-                                    }
-                                    echo '</optgroup>';
-                                }
-                                ?>
-                            </select>
-                        </td>
-
-                        <!-- Interest dropdown -->
-                        <td>
-                            <select class="htlleo-edit-select" data-id="<?php echo $reg['id']; ?>" data-col="preferred_interest_id">
-                                <option value="">—</option>
-                                <?php foreach ($interests as $i): ?>
-                                    <option value="<?php echo $i['id']; ?>" <?php selected($reg['preferred_interest_id'], $i['id']); ?>>
-                                        <?php echo esc_html($i['name']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </td>
-
-                        <!-- Gender dropdown -->
-                        <td>
-                            <select class="htlleo-edit-select" data-id="<?php echo $reg['id']; ?>" data-col="gender">
-                                <?php foreach ($genders as $val => $label): ?>
-                                    <option value="<?php echo esc_attr($val); ?>" <?php selected($reg['gender'], $val); ?>>
-                                        <?php echo esc_html($label); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </td>
-
-                        <!-- Other editable fields -->
-                        <?php
-                        $editable_fields = ['last_name','first_name','city','school','class','email','phone','status'];
-                        foreach ($editable_fields as $field):
-                        ?>
-                            <td contenteditable="true" data-id="<?php echo $reg['id']; ?>" data-col="<?php echo $field; ?>">
-                                <?php echo esc_html($reg[$field]); ?>
-                            </td>
-                        <?php endforeach; ?>
-
-                        <td><?php echo esc_html($reg['registered_at']); ?></td>
+                        <th>ID</th>
+                        <th>Session</th>
+                        <th>Interest</th>
+                        <th>Gender</th>
+                        <th>Last</th>
+                        <th>First</th>
+                        <th>City</th>
+                        <th>School</th>
+                        <th>Class</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Registered</th>
+                        <th>Actions</th>
                     </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <?php foreach ($registrations as $reg): ?>
+                        <tr data-event-id="<?php echo esc_attr($reg['event_id']); ?>">
+                            
+                            <td><?php echo $reg['id']; ?></td>
+
+                            <!-- Session dropdown -->
+                            <td>
+                                <select class="htlleo-edit-select" data-id="<?php echo $reg['id']; ?>" data-col="session_id" style="max-width:200px;" title="<?php echo esc_attr($reg['group_name'].' — '.$reg['event_title'].' ('.$reg['event_date'].')'); ?>">
+                                    <?php
+                                    $current_session_id = $reg['session_id'];
+                                    // Truncate display to 25 chars max
+                                    $display_text = mb_strlen($reg['group_name'].' — '.$reg['event_title'].' ('.$reg['event_date'].')') > 25
+                                        ? mb_substr($reg['group_name'].' — '.$reg['event_title'].' ('.$reg['event_date'].')', 0, 25).'…'
+                                        : $reg['group_name'].' — '.$reg['event_title'].' ('.$reg['event_date'].')';
+
+                                    echo '<option value="'.esc_attr($current_session_id).'" selected>'.esc_html($display_text).'</option>';
+
+                                    foreach ($upcoming_events as $edata) {
+                                        echo '<optgroup label="'.esc_attr($edata['title'].' — '.$edata['date']).'">';
+                                        foreach ($edata['sessions'] as $s) {
+                                            if ($s['id'] == $current_session_id) continue;
+                                            echo '<option value="'.esc_attr($s['id']).'">'.esc_html($s['group_name']).'</option>';
+                                        }
+                                        echo '</optgroup>';
+                                    }
+                                    ?>
+                                </select>
+                            </td>
+
+
+                            <!-- Interest dropdown -->
+                            <td>
+                                <select class="htlleo-edit-select" data-id="<?php echo $reg['id']; ?>" data-col="preferred_interest_id">
+                                    <option value="">—</option>
+                                    <?php foreach ($interests as $i): ?>
+                                        <option value="<?php echo $i['id']; ?>" <?php selected($reg['preferred_interest_id'], $i['id']); ?>>
+                                            <?php echo esc_html($i['name']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </td>
+
+                            <!-- Gender dropdown -->
+                            <td>
+                                <select class="htlleo-edit-select" data-id="<?php echo $reg['id']; ?>" data-col="gender">
+                                    <?php foreach ($genders as $val => $label): ?>
+                                        <option value="<?php echo esc_attr($val); ?>" <?php selected($reg['gender'], $val); ?>>
+                                            <?php echo esc_html($label); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </td>
+
+                            <!-- Other editable fields -->
+                            <?php
+                            $editable_fields = ['last_name','first_name','city','school','class','email','phone','status'];
+                            foreach ($editable_fields as $field):
+                            ?>
+                                <td contenteditable="true" data-id="<?php echo $reg['id']; ?>" data-col="<?php echo $field; ?>">
+                                    <?php echo esc_html($reg[$field]); ?>
+                                </td>
+                            <?php endforeach; ?>
+
+                            <td><?php echo esc_html($reg['registered_at']); ?></td>
+
+                            <!-- Delete button -->
+                            <td>
+                                <button class="htlleo-delete-btn button button-secondary" data-id="<?php echo $reg['id']; ?>">Delete</button>
+                            </td>
+
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     <?php else: ?>
         <p>No registrations found.</p>
     <?php endif; ?>
@@ -164,7 +196,13 @@ jQuery(document).ready(function($){
     $('#htlleo-registrations-table td[contenteditable="true"]').on('blur', function(){
         let cell = $(this), id = cell.data('id'), col = cell.data('col'), val = cell.text().trim();
         if (!id || !col) return;
-        $.post(ajaxurl, {action:'htlleo_update_registration', nonce:'<?php echo wp_create_nonce("htlleo_edit_registration"); ?>', id:id, col:col, value:val}, function(resp){
+        $.post(ajaxurl, {
+            action:'htlleo_update_registration',
+            nonce:'<?php echo wp_create_nonce("htlleo_edit_registration"); ?>',
+            id:id,
+            col:col,
+            value:val
+        }, function(resp){
             if(resp.success){ cell.css('background','#d4edda'); setTimeout(()=>cell.css('background',''),500); }
             else { alert("Update failed: "+resp.data); cell.css('background','#f8d7da'); }
         });
@@ -173,9 +211,59 @@ jQuery(document).ready(function($){
     // Save DROPDOWN edits
     $('.htlleo-edit-select').on('change', function(){
         let select = $(this), id = select.data('id'), col = select.data('col'), val = select.val();
-        $.post(ajaxurl, {action:'htlleo_update_registration', nonce:'<?php echo wp_create_nonce("htlleo_edit_registration"); ?>', id:id, col:col, value:val}, function(resp){
+        $.post(ajaxurl, {
+            action:'htlleo_update_registration',
+            nonce:'<?php echo wp_create_nonce("htlleo_edit_registration"); ?>',
+            id:id,
+            col:col,
+            value:val
+        }, function(resp){
             if(resp.success){ select.css('background','#d4edda'); setTimeout(()=>select.css('background',''),500); }
             else { alert("Update failed: "+resp.data); select.css('background','#f8d7da'); }
+        });
+    });
+
+    // Filter by first name, last name, and event
+    function filterRegistrations() {
+        let search = $('#htlleo-search-input').val().toLowerCase();
+        let eventId = $('#htlleo-event-filter').val();
+
+        $('#htlleo-registrations-table tbody tr').each(function(){
+            let row = $(this);
+            let firstName = row.find('td[data-col="first_name"]').text().toLowerCase();
+            let lastName  = row.find('td[data-col="last_name"]').text().toLowerCase();
+            let textMatch = firstName.includes(search) || lastName.includes(search);
+
+            let eventMatch = true;
+            if(eventId) {
+                let rowEventId = row.data('event-id');
+                eventMatch = rowEventId == eventId;
+            }
+
+            if(textMatch && eventMatch) row.show();
+            else row.hide();
+        });
+    }
+
+    $('#htlleo-search-input').on('input', filterRegistrations);
+    $('#htlleo-event-filter').on('change', filterRegistrations);
+
+    // Delete registration
+    $('.htlleo-delete-btn').on('click', function(){
+        if(!confirm('Are you sure you want to delete this registration?')) return;
+        let btn = $(this);
+        let regId = btn.data('id');
+
+        $.post(ajaxurl, {
+            action: 'htlleo_delete_registration',
+            nonce: '<?php echo wp_create_nonce("htlleo_delete_registration"); ?>',
+            id: regId
+        }, function(resp){
+            if(resp.success){
+                btn.closest('tr').fadeOut(300, function(){ $(this).remove(); });
+            } else {
+                alert('Delete failed: ' + resp.data);
+            }
         });
     });
 });

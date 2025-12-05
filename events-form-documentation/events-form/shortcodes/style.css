@@ -1,3 +1,10 @@
+#message, .updated, .notice, .notice-success {
+    display: none !important;
+}
+
+
+
+
 .htlleo-event {
     max-width: 50rem;           
     margin: 2rem auto;         
@@ -104,7 +111,15 @@
 /* Container */
 .htlleo-registration-form-container {
     margin-top: 2rem;
+    overflow: hidden;
+    transition: height 0.3s ease;
+    height: 0; /* initial */
 }
+
+.htlleo-registration-form-container.open {
+    height: auto; 
+}
+
 
 /* Formular */
 .htlleo-registration-form {
@@ -171,6 +186,14 @@
     transform: translateY(-1px);
 }
 
+#htlleo-registrations-table select {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
 /* Response */
 .htlleo-registration-response {
     margin-top: 0.75rem;
@@ -185,4 +208,3 @@
         padding: 1rem;
     }
 }
-
