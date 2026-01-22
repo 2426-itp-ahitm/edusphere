@@ -160,13 +160,11 @@ function htlleo_register_event_shortcode() {
                                 respDiv.innerHTML = `<div class="status-msg ${res.success ? 'success' : 'error'}">${res.message}</div>`;
                                 
                                 if (res.success) {
-                                    // Blur und Abdunkeln aktivieren
                                     const form = container.querySelector('.htlleo-registration-form');
                                     form.classList.add('is-submitting'); 
 
                                     setTimeout(() => {
                                         closeForm();
-                                        // Sessions updaten
                                         fetch('<?php echo admin_url("admin-ajax.php"); ?>?action=htlleo_get_event_sessions&id=' + eventId)
                                             .then(r => r.text())
                                             .then(html => {
