@@ -35,6 +35,7 @@ function htlleo_register_event_shortcode() {
         }
 
         wp_enqueue_style('htlleo-event-style', plugin_dir_url(__FILE__) . './style.css');
+        echo '<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">';
 
         ob_start(); ?>
         <div class="htlleo-event">
@@ -72,67 +73,32 @@ function htlleo_register_event_shortcode() {
         </div>
 
         <script>
-        document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('DOMContentLoaded', function() {
             const eventContainer = document.querySelector('.htlleo-event');
             const container = eventContainer.querySelector('.htlleo-registration-form-container');
             const eventInterests = <?php echo json_encode($event_interests); ?>;
             const eventId = <?php echo $event_id; ?>;
+            let currentActiveSessionId = null;
 
-            function openForm(container, contentHTML) {
-                container.innerHTML = contentHTML;
-
-                // Höhe messen und animieren
-                const fullHeight = container.scrollHeight + 'px';
+            function closeForm() {
                 container.style.height = '0';
-                container.offsetHeight; // trigger reflow
-                container.style.transition = 'height 0.3s ease';
-                container.style.height = fullHeight;
-
-                // Setze height auf auto nach der Transition für dynamische Inhalte
-                container.addEventListener('transitionend', function handler() {
-                    container.style.height = 'auto';
-                    container.removeEventListener('transitionend', handler);
-                });
-
-                const form = container.querySelector('.htlleo-registration-form');
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    const data = new FormData(form);
-                    data.append('action', 'htlleo_register_user');
-
-                    fetch('<?php echo admin_url("admin-ajax.php"); ?>', {
-                        method: 'POST',
-                        body: data
-                    })
-                    .then(res => res.json())
-                    .then(res => {
-                        const respDiv = container.querySelector('.htlleo-registration-response');
-                        respDiv.textContent = res.message;
-
-                        if (res.success) {
-                            // Smooth Close
-                            container.style.height = container.scrollHeight + 'px'; // fix current height
-                            container.offsetHeight; // trigger reflow
-                            container.style.height = '0';
-
-                            container.addEventListener('transitionend', function handlerClose() {
-                                container.innerHTML = '';
-                                container.style.height = '';
-                                container.removeEventListener('transitionend', handlerClose);
-                            });
-
-                            // Optional: Session-Liste neu laden wie vorher
-                        }
-                    });
-                });
+                currentActiveSessionId = null;
+                setTimeout(() => { container.innerHTML = ''; }, 300);
             }
-
 
             function attachCardClickHandlers() {
                 const cards = eventContainer.querySelectorAll('.htlleo-session-available');
                 cards.forEach(card => {
                     card.addEventListener('click', function() {
                         const sessionId = this.dataset.sessionId;
+                        const groupName = this.querySelector('.htlleo-session-group').textContent;
+
+                        if (currentActiveSessionId === sessionId) {
+                            closeForm();
+                            return;
+                        }
+
+                        currentActiveSessionId = sessionId;
                         let interestOptions = '';
                         for (const id in eventInterests) {
                             interestOptions += `<option value="${id}">${eventInterests[id]}</option>`;
@@ -140,36 +106,84 @@ function htlleo_register_event_shortcode() {
 
                         const formHTML = `
                             <form class="htlleo-registration-form">
+                                <h3 class="form-title">Anmeldung: ${groupName}</h3>
                                 <input type="hidden" name="session_id" value="${sessionId}">
-                                <label>Vorname: <input type="text" name="first_name" required></label>
-                                <label>Nachname: <input type="text" name="last_name" required></label>
-                                <label>Geschlecht:
+                                <label>Vorname <input type="text" name="first_name" required></label>
+                                <label>Nachname <input type="text" name="last_name" required></label>
+                                <label>Geschlecht
                                     <select name="gender">
                                         <option value="male">Männlich</option>
                                         <option value="female">Weiblich</option>
                                         <option value="diverse">Divers</option>
                                     </select>
                                 </label>
-                                <label>Stadt: <input type="text" name="city"></label>
-                                <label>Schule: <input type="text" name="school"></label>
-                                <label>Klasse: <input type="text" name="class"></label>
-                                <label>Email: <input type="email" name="email" required></label>
-                                <label>Telefon: <input type="text" name="phone"></label>
-                                <label>Bevorzugtes Interesse:
+                                <label>Email <input type="email" name="email" required></label>
+                                <label>Stadt <input type="text" name="city"></label>
+                                <label>Schule <input type="text" name="school"></label>
+                                <label>Klasse <input type="text" name="class"></label>
+                                <label>Telefon <input type="text" name="phone"></label>
+                                <label class="form-full-width">Interesse
                                     <select name="preferred_interest_id" required>
-                                        <option value="">— wählen —</option>
+                                        <option value="">— bitte wählen —</option>
                                         ${interestOptions}
                                     </select>
                                 </label>
-                                <button type="submit">Jetzt anmelden</button>
+                                <div class="form-actions form-full-width">
+                                    <button type="submit" class="submit-btn">Jetzt anmelden</button>
+                                    <button type="button" class="cancel-btn">Abbrechen</button>
+                                </div>
                             </form>
                             <div class="htlleo-registration-response"></div>
                         `;
-                        openForm(container, formHTML);
+
+                        container.innerHTML = formHTML;
+                        container.style.height = container.scrollHeight + 'px';
+
+                        // Cancel Button Event
+                        container.querySelector('.cancel-btn').addEventListener('click', closeForm);
+
+                        // Submit Event
+                        const form = container.querySelector('.htlleo-registration-form');
+                        form.addEventListener('submit', function(e) {
+                            e.preventDefault();
+                            const data = new FormData(form);
+                            data.append('action', 'htlleo_register_user');
+
+                            const btn = form.querySelector('.submit-btn');
+                            btn.disabled = true;
+                            btn.textContent = 'Wird gesendet...';
+
+                            fetch('<?php echo admin_url("admin-ajax.php"); ?>', { method: 'POST', body: data })
+                            .then(res => res.json())
+                            .then(res => {
+                                const respDiv = container.querySelector('.htlleo-registration-response');
+                                respDiv.innerHTML = `<div class="status-msg ${res.success ? 'success' : 'error'}">${res.message}</div>`;
+                                
+                                if (res.success) {
+                                    // Blur und Abdunkeln aktivieren
+                                    const form = container.querySelector('.htlleo-registration-form');
+                                    form.classList.add('is-submitting'); 
+
+                                    setTimeout(() => {
+                                        closeForm();
+                                        // Sessions updaten
+                                        fetch('<?php echo admin_url("admin-ajax.php"); ?>?action=htlleo_get_event_sessions&id=' + eventId)
+                                            .then(r => r.text())
+                                            .then(html => {
+                                                document.querySelector('.htlleo-session-list').innerHTML = html;
+                                                attachCardClickHandlers();
+                                            });
+                                    }, 3000);
+                                } else {
+                                    const btn = form.querySelector('.submit-btn');
+                                    btn.disabled = false;
+                                    btn.textContent = 'Jetzt anmelden';
+                                }
+                            });
+                        });
                     });
                 });
             }
-
             attachCardClickHandlers();
         });
         </script>
@@ -211,7 +225,21 @@ function htlleo_register_user(){
     $inserted = $wpdb->insert($table, $data);
 
     if($inserted){
+        // --- EMAIL SETUP ---
+        $to = sanitize_email($_POST['email']);
+        $subject = "Ihre Anmeldung wurde gespeichert";
+        $message = "Hallo " . $data['first_name'] . ",\n\n".
+                   "Vielen Dank für Ihre Anmeldung zur Veranstaltung.\n".
+                   "Freundliche Grüße\nHTL Leonding";
+
+        $headers = [
+            'Content-Type: text/plain; charset=UTF-8'
+        ];
+                
+        $sent = wp_mail($to, $subject, $message, $headers);
+
         wp_send_json(['success'=>true,'message'=>'Danke, Ihre Anmeldung wurde gespeichert!']);
+
     } else {
         wp_send_json(['success'=>false,'message'=>'Fehler beim Speichern. Bitte versuchen Sie es erneut.']);
     }

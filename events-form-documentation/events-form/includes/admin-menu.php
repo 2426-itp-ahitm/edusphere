@@ -280,3 +280,169 @@ add_action('wp_ajax_htlleo_delete_registration', function(){
         wp_send_json_error('Could not delete registration');
     }
 });
+
+
+
+// Add AJAX action
+add_action('wp_ajax_htlleo_export_registrations', 'htlleo_export_registrations_callback');
+
+function htlleo_export_registrations_callback() {
+    if (!current_user_can('manage_options')) {
+        wp_die('Zugriff verweigert.');
+    }
+
+    $nonce = isset($_GET['_wpnonce']) ? sanitize_text_field(wp_unslash($_GET['_wpnonce'])) : '';
+    if (!wp_verify_nonce($nonce, 'htlleo_export_registrations')) {
+        wp_die('Ungültiger Nonce.');
+    }
+
+    global $wpdb;
+
+    $registrations_table = htlleo_get_table('registrations');
+    $sessions_table      = htlleo_get_table('sessions');
+    $events_table        = htlleo_get_table('events');
+    $interests_table     = htlleo_get_table('interests');
+
+    $rows = $wpdb->get_results("
+        SELECT r.*, 
+               s.group_name,
+               e.title AS event_title,
+               e.event_date,
+               i.name AS interest_name
+        FROM $registrations_table r
+        JOIN $sessions_table s ON r.session_id = s.id
+        JOIN $events_table e ON s.event_id = e.id
+        LEFT JOIN $interests_table i ON i.id = r.preferred_interest_id
+        ORDER BY e.event_date ASC, s.group_name ASC, r.last_name ASC
+    ", ARRAY_A);
+
+    // German column headers
+    $headers = [
+        'ID',
+        'Veranstaltung',
+        'Datum',
+        'Gruppe',
+        'Interesse',
+        'Geschlecht',
+        'Nachname',
+        'Vorname',
+        'Stadt',
+        'Schule',
+        'Klasse',
+        'E-Mail',
+        'Telefon',
+        'Status',
+        'Registriert am'
+    ];
+
+    // Try to load PhpSpreadsheet (composer)
+    $autoload_paths = [
+        __DIR__ . '/vendor/autoload.php',
+        plugin_dir_path(__FILE__) . 'vendor/autoload.php',
+        WP_CONTENT_DIR . '/vendor/autoload.php'
+    ];
+    $loaded = false;
+    foreach ($autoload_paths as $p) {
+        if (file_exists($p)) {
+            require_once $p;
+            $loaded = true;
+            break;
+        }
+    }
+
+    // If PhpSpreadsheet exists, generate XLSX, otherwise fallback to CSV
+    if ($loaded && class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+        // Fully-qualified class names to avoid use-statements inside function
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Header row
+        $col = 1;
+        foreach ($headers as $h) {
+            $sheet->setCellValueByColumnAndRow($col, 1, $h);
+            $col++;
+        }
+
+        // Data rows
+        $rowIndex = 2;
+        foreach ($rows as $r) {
+            $data = [
+                $r['id'],
+                $r['event_title'],
+                $r['event_date'],
+                $r['group_name'],
+                $r['interest_name'],
+                $r['gender'],
+                $r['last_name'],
+                $r['first_name'],
+                $r['city'],
+                $r['school'],
+                $r['class'],
+                $r['email'],
+                $r['phone'],
+                $r['status'],
+                $r['registered_at']
+            ];
+
+            $col = 1;
+            foreach ($data as $v) {
+                // Avoid problems with null
+                $sheet->setCellValueByColumnAndRow($col, $rowIndex, $v === null ? '' : $v);
+                $col++;
+            }
+            $rowIndex++;
+        }
+
+        $filename = 'registrierungen_' . date('Y-m-d_H-i') . '.xlsx';
+
+        // Send proper headers
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        // Flush output buffer if any
+        if (ob_get_length()) ob_end_clean();
+        $writer->save('php://output');
+        exit;
+    } else {
+        // Fallback: CSV export (works without PhpSpreadsheet)
+        $filename = 'registrierungen_' . date('Y-m-d_H-i') . '.csv';
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+
+        // Output BOM for Excel to detect UTF-8
+        echo "\xEF\xBB\xBF";
+
+        $out = fopen('php://output', 'w');
+
+        // Write header (German)
+        fputcsv($out, $headers, ';');
+
+        foreach ($rows as $r) {
+            $data = [
+                $r['id'],
+                $r['event_title'],
+                $r['event_date'],
+                $r['group_name'],
+                $r['interest_name'],
+                $r['gender'],
+                $r['last_name'],
+                $r['first_name'],
+                $r['city'],
+                $r['school'],
+                $r['class'],
+                $r['email'],
+                $r['phone'],
+                $r['status'],
+                $r['registered_at']
+            ];
+            // fputcsv will accept arrays; use semicolon as delimiter for German Excel compatibility
+            fputcsv($out, $data, ';');
+        }
+
+        fclose($out);
+        exit;
+    }
+}

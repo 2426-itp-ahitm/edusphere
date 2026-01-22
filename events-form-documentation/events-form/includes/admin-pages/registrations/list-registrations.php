@@ -74,6 +74,14 @@ $genders = ['male' => 'Male', 'female' => 'Female', 'diverse' => 'Diverse', 'non
 <div class="wrap">
     <h1>Registrations</h1>
 
+    <p>
+        <a href="<?php echo admin_url('admin-ajax.php?action=htlleo_export_registrations&_wpnonce='.wp_create_nonce('htlleo_export_registrations')); ?>" 
+        class="button button-primary">
+        Exportieren als Excel
+        </a>
+    </p>
+
+
     <div style="margin-bottom: 1rem;">
         <input type="text" id="htlleo-search-input" placeholder="Search users..." style="padding:5px; width: 200px; margin-right:10px;">
         <select id="htlleo-event-filter" style="padding:5px;">

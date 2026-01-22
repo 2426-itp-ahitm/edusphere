@@ -13,7 +13,6 @@ require_once plugin_dir_path(__FILE__) . 'includes/db.php';
 require_once plugin_dir_path(__FILE__) . 'includes/admin-menu.php';
 
 
-
 // -------------------------
 // Activation Hook: Create DB tables
 // -------------------------
