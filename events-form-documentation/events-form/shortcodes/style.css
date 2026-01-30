@@ -21,11 +21,11 @@
 .htlleo-event-header h2 {
   font-size: 2.5rem;
   margin: 0;
-  color: white;
+  color: white !important;
 }
 
 .htlleo-event-sessions h3 {
-  color: white;
+  color: white !important;
 }
 
 /* --- SESSIONS GRID --- */
@@ -37,32 +37,32 @@
 }
 
 .htlleo-session-card {
-  background: #fff;
+  background: #fff !important;
   border: 1px solid #eee;
   padding: 1.5rem;
   border-radius: 0; 
   transition: all 0.3s ease;
 }
 
-/* Available State */
+/* Available Session State */
 .htlleo-session-available {
   cursor: pointer;
   border-left: 4px solid #1a73e8; 
 }
 
 .htlleo-session-available:hover {
-  background-color: #f0f7ff;
+  background-color: #f0f7ff !important;
   transform: translateY(-5px);
   border-color: #1a73e8 !important;
   box-shadow: 0 5px 15px rgba(26, 115, 232, 0.15);
 }
 
-/* Full State with Blur */
+/* Full/Booked Session State with Blur */
 .htlleo-session-full {
   background-color: rgba(255, 255, 255, 0.1) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   border-left: 4px solid #555 !important;
-  filter: grayscale(1) blur(1.5px);
+  filter: grayscale(1) blur(0.4px); 
   cursor: not-allowed;
   position: relative;
   opacity: 0.6;
@@ -75,14 +75,14 @@
 }
 
 .htlleo-session-full::after {
-  content: 'FULL';
+  content: 'VOLL';
   position: absolute;
   top: 5px;
   right: 5px;
   font-size: 0.6rem;
   font-weight: 800;
-  background: #555;
-  color: white;
+  background: #555 !important;
+  color: white !important;
   padding: 2px 6px;
   border-radius: 3px;
 }
@@ -93,7 +93,7 @@
   overflow: hidden;
   height: 0; 
   transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: #f4f4f4; 
+  background-color: #f4f4f4 !important; 
   margin-top: 2rem;
   border-top: 4px solid #1a73e8;
 }
@@ -106,6 +106,7 @@
   transition: filter 0.5s ease, opacity 0.5s ease;
 }
 
+/* Visual feedback during submission success */
 .htlleo-registration-form.is-submitting {
   filter: blur(5px) brightness(0.8);
   pointer-events: none;
@@ -180,7 +181,7 @@
   transform: translateY(-2px);
 }
 
-/* --- SNACKBAR (CENTERED FIX) --- */
+/* --- SNACKBAR (CENTERED) --- */
 .htlleo-registration-response {
   position: absolute;
   top: 50%;
@@ -203,14 +204,14 @@
 
 .status-msg.success {
   background: #1a73e8; 
-  color: white;
+  color: white !important;
   border-bottom: 4px solid #0d47a1;
   backdrop-filter: blur(10px);
 }
 
 .status-msg.error {
   background: #d32f2f;
-  color: white;
+  color: white !important;
   border-bottom: 4px solid #b71c1c;
 }
 
@@ -225,7 +226,7 @@
   }
 }
 
-/* --- RESPONSIVE --- */
+/* --- RESPONSIVE DESIGN --- */
 @media (max-width: 768px) {
   .htlleo-registration-form {
       grid-template-columns: 1fr !important;
